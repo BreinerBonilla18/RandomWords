@@ -37,18 +37,18 @@ app.get('/words', async (req, res) => {
   });
 
   app.post('/create-word', async (req, res) => {
-    const { word } = req.body;
+    const { word, meaning } = req.body;
 
-    try {
-        const client = await pool.connect();
-        await client.query('INSERT INTO words (word) VALUES ($1)', [word]);
-        client.release();
+  try {
+    const client = await pool.connect();
+    await client.query('INSERT INTO words (word, meaning) VALUES ($1, $2)', [word, meaning]);
+    client.release();
 
-        res.json({ message: 'word added successfully' });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Error adding a word' });
-    }
+    res.json({ message: 'word added successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error adding a word' });
+  }
 });
 
 app.listen(port, () => {

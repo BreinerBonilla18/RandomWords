@@ -1,31 +1,43 @@
-import { useEffect, useState } from 'react';
-import './App.css'; // Importa tu archivo CSS
-import axios from 'axios';
+import { useEffect, useState } from "react";
+import "./App.css"; // Importa tu archivo CSS
+import axios from "axios";
+import { saveAs } from 'file-saver';
 
 function App() {
-  const [word, setWord] = useState('');
+  const [word, setWord] = useState("");
   const [wordList, setWordList] = useState([]);
-  const [isThereChangeWord,setIsThereChangeWord] = useState(false)
+  const [isThereChangeWord, setIsThereChangeWord] = useState(false);
+  const [meaning, setMeaning] = useState("");
+  const [filterText, setFilterText] = useState("");
 
-  console.log(word)
   const handleAddWord = () => {
-    if (!word) {
-      alert('Por favor, ingresa una palabra');
+    if (!word || !meaning) {
+      alert("Please, type a word and its meaning");
       return;
-  }
+    }
+    wordList.sort(() => Math.random() - 0.5);
+    setWordList((prev) => [...prev, { word: word, meaning: meaning }]);
+    setWord("");
+    setMeaning("");
 
-  setWordList((prev) => [...prev, word]);
-  setWord('');
-
-    axios.post('http://localhost:3000/create-word', { word: word })
-    .then(response => {
-      setIsThereChangeWord(true)
+    axios
+      .post("http://localhost:3000/create-word", {
+        word: word,
+        meaning: meaning,
+      })
+      .then((response) => {
+        setIsThereChangeWord(true);
         console.log(response.data);
-    })
-    .catch(error => {
+      })
+      .catch((error) => {
         console.error(error);
-    });
+      });
+  };
 
+  const downloadList = () => {
+    const wordData = wordList.map((word) => `${word.word}: ${word.meaning}\n`).join('');
+    const blob = new Blob([wordData], { type: 'text/plain;charset=utf-8' });
+    saveAs(blob, 'word_list.txt');
   };
 
   const handleShuffleWords = () => {
@@ -41,10 +53,9 @@ function App() {
   useEffect(() => {
     const fetchWords = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/words');
-        const shuffledWords = response.data 
-        setWordList(shuffledWords);
-        setIsThereChangeWord(false)
+        const response = await axios.get("http://localhost:3000/words");
+        setWordList(response.data);
+        setIsThereChangeWord(false);
       } catch (error) {
         console.error(error);
       }
@@ -55,25 +66,64 @@ function App() {
 
   return (
     <div className="App">
-      <h1 className="title">Practice English Words</h1>
+      <h1 className="title" style={{ textAlign: "center" }}>
+        Practice English Words
+      </h1>
+      <div style={{display:"flex", justifyContent:"center", marginBottom:"20px"}}>
+        <input
+          type="text"
+          value={filterText}
+          onChange={(e) => setFilterText(e.target.value)}
+          style={{ borderRadius: "8px", marginRight: "8px", width:"80%", height:"35px" }}
+          placeholder="Filter words"
+        />
+      </div>
       <div className="input-container">
         <input
           type="text"
           value={word}
           onChange={(e) => setWord(e.target.value)}
-          style={{borderRadius:"8px", marginRight:"8px"}}
+          style={{ borderRadius: "8px", marginRight: "8px" }}
           placeholder="Type a new word"
+        />
+        <input
+          type="text"
+          value={meaning}
+          onChange={(e) => setMeaning(e.target.value)}
+          style={{ borderRadius: "8px", marginRight: "8px" }}
+          placeholder="Type the meaning"
         />
         <button onClick={handleAddWord}>Add</button>
       </div>
-      <div className="word-list" style={{color:"#000"}}>
+      <div className="word-list" style={{ color: "#000", overflow:"auto", height: "350px" }}>
         <ul>
-          {wordList?.slice(0, 10).sort(() => Math.random() - 0.5).map((word, index) => (
-            <li key={index}>{word.word}</li>
-          ))}
+          {filterText !== ""
+            ? wordList
+                .filter((word) =>
+                  word.word.toLowerCase().includes(filterText.toLowerCase())
+                )
+                .map((word, index) => (
+                  <li key={index}>
+                    <span style={{ fontWeight: "bold" }}>{word.word}:</span>{" "}
+                    {word.meaning}
+                  </li>
+                ))
+            : wordList?.slice(0, 20).map((word, index) => (
+                <li key={index}>
+                  <span style={{ fontWeight: "bold" }}>{word.word}:</span>{" "}
+                  {word.meaning}
+                </li>
+              ))}
         </ul>
       </div>
-      <button style={{marginTop:"20px"}} onClick={handleShuffleWords}>Shuffle</button>
+      <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
+        <button style={{ marginTop: "20px" }} onClick={handleShuffleWords}>
+          Shuffle 
+        </button>
+        <button style={{ marginTop: "20px" }} onClick={downloadList}>
+          Download 
+        </button>
+      </div>
     </div>
   );
 }

@@ -33,3 +33,7 @@
   max-width: 400px;
   margin: 0 auto;
 }
+
+li:hover {
+  background-color: #cfcece;
+}

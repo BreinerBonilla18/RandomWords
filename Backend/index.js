@@ -51,6 +51,21 @@ app.get('/words', async (req, res) => {
   }
 });
 
+app.put('/update-word/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const client = await pool.connect();
+    await client.query('UPDATE words SET timeslearned = timeslearned + 1 WHERE id = $1', [id]);
+    client.release();
+
+    res.json({ message: 'Word updated successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error updating word' });
+  }
+});
+
 app.listen(port, () => {
     console.log(`server is listening to port ${port}`);
 });

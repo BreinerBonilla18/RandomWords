@@ -16,23 +16,21 @@ function App() {
       alert("Please, type a word and its meaning");
       return;
     }
-    wordList.sort(() => Math.random() - 0.5);
-    setWordList((prev) => [...prev, { word: word, meaning: meaning }]);
-    setWord("");
-    setMeaning("");
 
     axios
       .post("http://localhost:3000/create-word", {
         word: word,
         meaning: meaning,
       })
-      .then((response) => {
+      .then(() => {
         setIsThereChangeWord(true);
-        console.log(response.data);
       })
       .catch((error) => {
         console.error(error);
       });
+
+    setWord("");
+    setMeaning("");
   };
 
   const handleMarkLearned = async (wordId) => {
@@ -54,12 +52,7 @@ function App() {
   };
 
   const handleShuffleWords = () => {
-    // Shuffle the word list using Fisher-Yates shuffle+
-    const shuffledList = [...wordList];
-    for (let i = shuffledList.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffledList[i], shuffledList[j]] = [shuffledList[j], shuffledList[i]];
-    }
+    const shuffledList = [...wordList].sort(() => Math.random() - 0.5);
     setWordList(shuffledList);
   };
 
@@ -78,51 +71,40 @@ function App() {
   }, [isThereChangeWord]);
 
   return (
-    <div className="App">
-      <h1 className="title" style={{ textAlign: "center" }}>
+    <div className="bg-[#f0f0f0] p-8 relative">
+      <span className="text-black text-xs absolute top-2.5 left-2.5">
+        Palabras: {wordList.length}
+      </span>
+      <h1 className="text-center mb-5 text-[#252525] text-5xl mt-1 font-semibold">
         Practice English Words
       </h1>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          marginBottom: "20px",
-        }}
-      >
+      <div className="flex justify-center mb-5">
         <input
           type="text"
           value={filterText}
           onChange={(e) => setFilterText(e.target.value)}
-          style={{
-            borderRadius: "8px",
-            marginRight: "8px",
-            width: "80%",
-            height: "35px",
-          }}
+          className="rounded-lg mr-2 bg-[#252525] p-3 w-full"
           placeholder="Filter words"
         />
       </div>
-      <div className="input-container">
+      <div className="flex justify-center mb-5">
         <input
           type="text"
           value={word}
           onChange={(e) => setWord(e.target.value)}
-          style={{ borderRadius: "8px", marginRight: "8px" }}
+          className="bg-[#252525] p-3 rounded-lg mr-2"
           placeholder="Type a new word"
         />
         <input
           type="text"
           value={meaning}
           onChange={(e) => setMeaning(e.target.value)}
-          style={{ borderRadius: "8px", marginRight: "8px" }}
+          className="bg-[#252525] p-3 rounded-lg mr-2"
           placeholder="Type the meaning"
         />
         <button onClick={handleAddWord}>Add</button>
       </div>
-      <div
-        className="word-list"
-        style={{ color: "#000", overflow: "auto", height: "350px" }}
-      >
+      <div className="rounded-sm h-80 overflow-auto text-black p-4 mx-auto max-w-[500px] border border-gray-300">
         <ul>
           {filterText !== ""
             ? wordList
@@ -133,26 +115,22 @@ function App() {
                   <li
                     key={index}
                     type="button"
-                    style={{ cursor: "pointer" }}
+                    className="cursor-pointer hover:bg-[#cfcece]"
                     onClick={() => handleMarkLearned(word.id)}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       viewBox="0 0 24 24"
                       fill={`${isChecked.includes(word.id) ? "green" : "gray"}`}
-                      style={{
-                        height: "20px",
-                        width: "20px",
-                        marginBottom: "-4px",
-                      }}
+                      className="mb-0.5 h-5 w-5 inline"
                     >
                       <path
                         fillRule="evenodd"
                         d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
                         clipRule="evenodd"
                       />
-                    </svg>
-                    <span style={{ fontWeight: "bold" }}>{word.word}:</span>{" "}
+                    </svg>{" "}
+                    <span className="font-semibold">{word.word}:</span>{" "}
                     {word.meaning + " "}
                     <small>{`(${word.timeslearned})`}</small>
                   </li>
@@ -161,37 +139,33 @@ function App() {
                 <li
                   key={index}
                   type="button"
+                  className="cursor-pointer hover:bg-[#cfcece]"
                   onClick={() => handleMarkLearned(word.id)}
-                  style={{ cursor: "pointer" }}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
                     fill={`${isChecked.includes(word.id) ? "green" : "gray"}`}
-                    style={{
-                      height: "20px",
-                      width: "20px",
-                      marginBottom: "-4px",
-                    }}
+                    className="mb-0.5 h-5 w-5 inline"
                   >
                     <path
                       fillRule="evenodd"
                       d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
                       clipRule="evenodd"
                     />
-                  </svg>
-                  <span style={{ fontWeight: "bold" }}>{word.word}:</span>{" "}
+                  </svg>{" "}
+                  <span className="font-semibold">{word.word}:</span>{" "}
                   {word.meaning + " "}
                   <small>{`(${word.timeslearned})`}</small>
                 </li>
               ))}
         </ul>
       </div>
-      <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
-        <button style={{ marginTop: "20px" }} onClick={handleShuffleWords}>
+      <div className="flex justify-center gap-2.5">
+        <button className="mt-5" onClick={handleShuffleWords}>
           Shuffle
         </button>
-        <button style={{ marginTop: "20px" }} onClick={downloadList}>
+        <button className="mt-5" onClick={downloadList}>
           Download
         </button>
       </div>

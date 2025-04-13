@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import "./App.css"; // Importa tu archivo CSS
-import axios from "axios";
+import ModalEditWord from "./modals/ModalEditWord";
+import ModalAddWord from "./modals/ModalAddWord";
 import { saveAs } from "file-saver";
+import axios from "axios";
+import "./App.css";
 
 function App() {
   const [word, setWord] = useState("");
@@ -10,6 +12,12 @@ function App() {
   const [meaning, setMeaning] = useState("");
   const [filterText, setFilterText] = useState("");
   const [isChecked, setIsChecked] = useState([]);
+  const [selectedLetter, setSelectedLetter] = useState("none");
+  const [editWord, setEditWord] = useState("");
+  const [editMeaning, setEditMeaning] = useState("");
+  const [editId, setEditId] = useState("");
+  const [isAlphabetical, setIsAlphabetical] = useState(false);
+  const [oneDataWord, setOneDataWord] = useState({})
 
   const handleAddWord = () => {
     if (!word || !meaning) {
@@ -36,8 +44,8 @@ function App() {
   const handleMarkLearned = async (wordId) => {
     try {
       setIsChecked((prev) => [...prev, wordId]);
-      await axios.put(`http://localhost:3000/update-word/${wordId}`);
-      setIsThereChangeWord(true); // Trigger refetch on word list update
+      await axios.put(`http://localhost:3000/update-times-learned/${wordId}`);
+      setIsThereChangeWord(true);
     } catch (error) {
       console.error(error);
     }
@@ -56,6 +64,41 @@ function App() {
     setWordList(shuffledList);
   };
 
+  const handleUpdateWord = async () => {
+    if (!editWord || !editMeaning) {
+      alert("Please, fill in both fields.");
+      return;
+    }
+
+    try {
+      await axios.put(`http://localhost:3000/update-word/${editId}`, {
+        word: editWord,
+        meaning: editMeaning,
+      });
+      setIsThereChangeWord(true); // Refresca la lista de palabras
+      document.getElementById("edit_modal").close(); // Cierra el modal
+    } catch (error) {
+      console.error(error);
+      alert("Error updating the word.");
+    }
+  };
+
+  const handleGetOneDataWord = (wordData) => {
+    setOneDataWord(wordData)
+    document.getElementById("detail_modal").showModal(); // Abre el modal
+  }
+
+  const openEditModal = (word) => {
+    setEditWord(word.word); // Establece el valor de la palabra en el input
+    setEditMeaning(word.meaning); // Establece el significado en el input
+    setEditId(word.id); // Guarda el ID de la palabra para la actualización
+    document.getElementById("edit_modal").showModal(); // Abre el modal
+  };
+
+  const handleAlphabeticalChange = (e) => {
+    setIsAlphabetical(e.target.checked);
+  };
+
   useEffect(() => {
     const fetchWords = async () => {
       try {
@@ -70,6 +113,12 @@ function App() {
     fetchWords();
   }, [isThereChangeWord]);
 
+  useEffect(() => {
+    if (!isAlphabetical) {
+      handleShuffleWords();
+    }
+  }, [isAlphabetical]);
+
   return (
     <div className="bg-[#f0f0f0] p-8 relative">
       <span className="text-black text-xs absolute top-2.5 left-2.5">
@@ -78,97 +127,132 @@ function App() {
       <h1 className="text-center mb-5 text-[#252525] text-5xl mt-1 font-semibold">
         Practice English Words
       </h1>
-      <div className="flex justify-center mb-5">
+      <div className="flex justify-center mb-3">
         <input
           type="text"
           value={filterText}
           onChange={(e) => setFilterText(e.target.value)}
-          className="rounded-lg mr-2 bg-[#252525] p-3 w-full"
+          className="input w-full rounded-md me-2"
           placeholder="Filter words"
         />
+        <select
+          value={selectedLetter}
+          onChange={(e) => setSelectedLetter(e.target.value)}
+          className="select rounded-md w-full"
+        >
+          <option disabled={true}>Filter by letter</option>
+          <option value="none">none</option>
+          {Array.from({ length: 26 }, (_, i) => (
+            <option key={i} value={String.fromCharCode(65 + i)}>
+              {String.fromCharCode(65 + i)}
+            </option>
+          ))}
+        </select>
       </div>
-      <div className="flex justify-center mb-5">
+      <label className="fieldset-label text-black mb-3">
         <input
-          type="text"
-          value={word}
-          onChange={(e) => setWord(e.target.value)}
-          className="bg-[#252525] p-3 rounded-lg mr-2"
-          placeholder="Type a new word"
+          type="checkbox"
+          className="checkbox checkbox-neutral checkbox-sm"
+          onClick={handleAlphabeticalChange}
         />
-        <input
-          type="text"
-          value={meaning}
-          onChange={(e) => setMeaning(e.target.value)}
-          className="bg-[#252525] p-3 rounded-lg mr-2"
-          placeholder="Type the meaning"
-        />
-        <button onClick={handleAddWord}>Add</button>
-      </div>
-      <div className="rounded-sm h-80 overflow-auto text-black p-4 mx-auto max-w-[500px] border border-gray-300">
+        <small>Habilitar orden alfabético</small>
+      </label>
+      <div className="rounded-sm h-96 overflow-y-scroll text-black mx-auto max-w-[500px] border border-gray-300">
         <ul>
-          {filterText !== ""
-            ? wordList
-                .filter((word) =>
-                  word.word.toLowerCase().includes(filterText.toLowerCase())
-                )
-                .map((word, index) => (
-                  <li
-                    key={index}
-                    type="button"
-                    className="cursor-pointer hover:bg-[#cfcece]"
+          {wordList
+            .sort((a, b) =>
+              isAlphabetical ? a?.word?.localeCompare(b.word) : 0
+            ) // Ordena solo si el checkbox está activo
+            .filter((word) =>
+              filterText !== ""
+                ? word?.word?.toLowerCase().includes(filterText.toLowerCase())
+                : true
+            )
+            .filter((word) =>
+              selectedLetter === "none"
+                ? true
+                : word?.word && word.word[0]?.toUpperCase() === selectedLetter
+            )
+            .map((word, index) => (
+              <li key={index} className="p-3 border-b border-gray-300">
+                <p className="font-semibold">{word.word}:</p>{" "}
+                <p className="mb-2">{word.meaning}</p>
+                <div className="flex justify-end gap-2">
+                  <button
+                    className="btn btn-xs"
+                    onClick={() => openEditModal(word)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="btn btn-xs bg-blue-950"
+                    onClick={() => handleGetOneDataWord(word)}
+                  >
+                    Details
+                  </button>
+                  <button
+                    className={`btn btn-xs ${
+                      isChecked.includes(word.id)
+                        ? " bg-green-700"
+                        : " bg-gray-700"
+                    }`}
                     onClick={() => handleMarkLearned(word.id)}
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill={`${isChecked.includes(word.id) ? "green" : "gray"}`}
-                      className="mb-0.5 h-5 w-5 inline"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
-                        clipRule="evenodd"
-                      />
-                    </svg>{" "}
-                    <span className="font-semibold">{word.word}:</span>{" "}
-                    {word.meaning + " "}
-                    <small>{`(${word.timeslearned})`}</small>
-                  </li>
-                ))
-            : wordList?.slice(0, 20).map((word, index) => (
-                <li
-                  key={index}
-                  type="button"
-                  className="cursor-pointer hover:bg-[#cfcece]"
-                  onClick={() => handleMarkLearned(word.id)}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill={`${isChecked.includes(word.id) ? "green" : "gray"}`}
-                    className="mb-0.5 h-5 w-5 inline"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
-                      clipRule="evenodd"
-                    />
-                  </svg>{" "}
-                  <span className="font-semibold">{word.word}:</span>{" "}
-                  {word.meaning + " "}
-                  <small>{`(${word.timeslearned})`}</small>
-                </li>
-              ))}
+                    Learned({word.timeslearned})
+                  </button>
+                </div>
+              </li>
+            ))}
         </ul>
       </div>
-      <div className="flex justify-center gap-2.5">
-        <button className="mt-5" onClick={handleShuffleWords}>
+      <div className="flex justify-center gap-2.5 mt-5">
+        <button
+          className="btn w-28"
+          disabled={isAlphabetical}
+          onClick={handleShuffleWords}
+        >
           Shuffle
         </button>
-        <button className="mt-5" onClick={downloadList}>
+        <button className="btn w-28" onClick={downloadList}>
           Download
         </button>
+        <button
+          className="btn w-28"
+          onClick={() => document.getElementById("add_word_modal").showModal()}
+        >
+          Add Word
+        </button>
       </div>
+      <dialog id="detail_modal" className="modal">
+      <div className="modal-box">
+        <div className="flex flex-col mt-4">
+        <h1 className="text-2xl mb-1">{oneDataWord?.word}</h1>
+        <p className="mb-1">Meaning: {oneDataWord?.meaning}</p>
+        <p>Description: {oneDataWord?.description} </p>
+        </div>
+        <div className="modal-action">
+          <form method="dialog">
+            <button className="btn">Close</button>
+          </form>
+        </div>
+      </div>
+    </dialog>
+      {/* Modal to Add Word */}
+      <ModalAddWord
+        word={word}
+        setWord={setWord}
+        meaning={meaning}
+        setMeaning={setMeaning}
+        handleAddWord={handleAddWord}
+      />
+      {/* Modal to Edit Word */}
+      <ModalEditWord
+        editWord={editWord}
+        setEditWord={setEditWord}
+        editMeaning={editMeaning}
+        setEditMeaning={setEditMeaning}
+        handleUpdateWord={handleUpdateWord}
+      />
     </div>
   );
 }

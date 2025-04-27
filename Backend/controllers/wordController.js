@@ -15,10 +15,10 @@ export const getWords = async (req, res) => {
   
   // Crear una nueva palabra
   export const createWord = async (req, res) => {
-    const { word, meaning } = req.body;
+    const { word, meaning, description } = req.body;
     try {
       const client = await pool.connect();
-      await client.query('INSERT INTO words (word, meaning) VALUES ($1, $2)', [word, meaning]);
+      await client.query('INSERT INTO words (word, meaning, description) VALUES ($1, $2, $3)', [word, meaning, description]);
       client.release();
       res.json({ message: 'Palabra agregada exitosamente' });
     } catch (err) {
@@ -30,16 +30,16 @@ export const getWords = async (req, res) => {
   //Actualizar una palabra
   export const updateWord = async (req, res) => {
     const { id } = req.params; // ID de la palabra a actualizar
-    const { word, meaning } = req.body; // Nuevos valores para word y meaning
+    const { word, meaning, description } = req.body; // Nuevos valores para word y meaning
   
     try {
       const client = await pool.connect();
       const query = `
         UPDATE words 
-        SET word = $1, meaning = $2 
-        WHERE id = $3
+        SET word = $1, meaning = $2, description = $3 
+        WHERE id = $4
       `;
-      const values = [word, meaning, id];
+      const values = [word, meaning, description, id];
   
       await client.query(query, values);
       client.release();

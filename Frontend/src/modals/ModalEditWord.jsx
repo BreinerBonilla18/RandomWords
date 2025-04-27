@@ -6,6 +6,8 @@ function ModalEditWord({
   editMeaning,
   setEditMeaning,
   handleUpdateWord,
+  editDescription,
+  setEditDescription,
 }) {
   return (
     <dialog id="edit_modal" className="modal">
@@ -26,6 +28,12 @@ function ModalEditWord({
             className="input input-bordered w-full"
             placeholder="Edit meaning"
           />
+          <textarea
+            className="textarea w-full rounded-md h-72"
+            placeholder="Edit description"
+            value={editDescription}
+            onChange={(e) => setEditDescription(e.target.value)}
+          ></textarea>
         </div>
         <div className="modal-action">
           <button className="btn" onClick={handleUpdateWord}>
@@ -41,11 +49,13 @@ function ModalEditWord({
 }
 
 ModalEditWord.propTypes = {
-    handleUpdateWord: PropTypes.func,
-    setEditMeaning: PropTypes.func,
-    setEditWord: PropTypes.func,
-    editMeaning: PropTypes.string,
-    editWord: PropTypes.string,
+  handleUpdateWord: PropTypes.func,
+  setEditDescription: PropTypes.func,
+  setEditMeaning: PropTypes.func,
+  setEditWord: PropTypes.func,
+  editMeaning: PropTypes.string,
+  editWord: PropTypes.string,
+  editDescription: PropTypes.string,
 };
 
 export default ModalEditWord;

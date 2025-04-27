@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
 
-function ModalAddWord({ word, setWord, meaning, setMeaning, handleAddWord }) {
+function ModalAddWord({ word, setWord, meaning, setMeaning, description, setDescription, handleAddWord }) {
   return (
     <dialog id="add_word_modal" className="modal">
       <div className="modal-box">
@@ -20,6 +20,12 @@ function ModalAddWord({ word, setWord, meaning, setMeaning, handleAddWord }) {
             className="input w-full rounded-md"
             placeholder="Type the meaning"
           />
+          <textarea
+            className="textarea w-full rounded-md h-72"
+            placeholder="Type the description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          ></textarea>
         </div>
         <div className="modal-action">
           <button className="btn" onClick={handleAddWord}>
@@ -41,8 +47,10 @@ function ModalAddWord({ word, setWord, meaning, setMeaning, handleAddWord }) {
 
 ModalAddWord.propTypes = {
   handleAddWord: PropTypes.func,
+  setDescription: PropTypes.func,
   setMeaning: PropTypes.func,
   setWord: PropTypes.func,
+  description: PropTypes.string,
   meaning: PropTypes.string,
   word: PropTypes.string,
 };

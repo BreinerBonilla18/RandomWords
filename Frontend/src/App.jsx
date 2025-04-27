@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ModalEditWord from "./modals/ModalEditWord";
 import ModalAddWord from "./modals/ModalAddWord";
 import { saveAs } from "file-saver";
@@ -11,11 +11,13 @@ function App() {
   const [wordList, setWordList] = useState([]);
   const [isThereChangeWord, setIsThereChangeWord] = useState(false);
   const [meaning, setMeaning] = useState("");
+  const [description, setDescription] = useState("");
   const [filterText, setFilterText] = useState("");
   const [isChecked, setIsChecked] = useState([]);
   const [selectedLetter, setSelectedLetter] = useState("none");
   const [editWord, setEditWord] = useState("");
   const [editMeaning, setEditMeaning] = useState("");
+  const [editDescription, setEditDescription] = useState("");
   const [editId, setEditId] = useState("");
   const [isAlphabetical, setIsAlphabetical] = useState(false);
   const [oneDataWord, setOneDataWord] = useState({});
@@ -23,7 +25,7 @@ function App() {
   const itemsPerPage = 10;
 
   const handleAddWord = () => {
-    if (!word || !meaning) {
+    if (!word || !meaning || !description) {
       alert("Please, type a word and its meaning");
       return;
     }
@@ -32,6 +34,7 @@ function App() {
       .post("http://localhost:3000/create-word", {
         word: word,
         meaning: meaning,
+        description: description,
       })
       .then(() => {
         setIsThereChangeWord(true);
@@ -39,7 +42,7 @@ function App() {
       .catch((error) => {
         console.error(error);
       });
-
+    setDescription("");
     setWord("");
     setMeaning("");
   };
@@ -67,7 +70,7 @@ function App() {
   }, []);
 
   const handleUpdateWord = async () => {
-    if (!editWord || !editMeaning) {
+    if (!editWord || !editMeaning || !editDescription) {
       alert("Please, fill in both fields.");
       return;
     }
@@ -76,6 +79,7 @@ function App() {
       await axios.put(`http://localhost:3000/update-word/${editId}`, {
         word: editWord,
         meaning: editMeaning,
+        description: editDescription,
       });
       setIsThereChangeWord(true); // Refresca la lista de palabras
       document.getElementById("edit_modal").close(); // Cierra el modal
@@ -91,6 +95,7 @@ function App() {
   };
 
   const openEditModal = (word) => {
+    setEditDescription(word.description);
     setEditWord(word.word); // Establece el valor de la palabra en el input
     setEditMeaning(word.meaning); // Establece el significado en el input
     setEditId(word.id); // Guarda el ID de la palabra para la actualización
@@ -153,7 +158,7 @@ function App() {
   useEffect(() => {
     setCurrentPage(1); // Restablece la página actual a la primera
   }, [filterText, selectedLetter, isAlphabetical]);
-  
+
   return (
     <div className="bg-[#f0f0f0] p-8 relative">
       <span className="text-black text-xs absolute top-2.5 left-2.5">
@@ -243,10 +248,23 @@ function App() {
       </div>
       <dialog id="detail_modal" className="modal">
         <div className="modal-box">
-          <div className="flex flex-col mt-4">
-            <h1 className="text-2xl mb-1">{oneDataWord?.word}</h1>
-            <p className="mb-1">Meaning: {oneDataWord?.meaning}</p>
-            <p>Description: {oneDataWord?.description} </p>
+          <div className="flex flex-col mt-4 gap-3">
+            <h1 className="text-2xl mb-1 fw font-bold">{oneDataWord?.word}</h1>
+            <p className="mb-1">
+              <span className="font-semibold">Significado:</span>{" "}
+              {oneDataWord?.meaning}
+            </p>
+            <p className="text-justify">
+              <span className="font-semibold">Descripción:</span>{" "}
+              {oneDataWord?.description?.split("\n").map((paragraph, index) => (
+                <React.Fragment key={index}>
+                  {paragraph}
+                  {index < oneDataWord.description.split("\n").length - 1 && (
+                    <br />
+                  )}
+                </React.Fragment>
+              ))}
+            </p>
           </div>
           <div className="modal-action">
             <form method="dialog">
@@ -262,6 +280,8 @@ function App() {
         meaning={meaning}
         setMeaning={setMeaning}
         handleAddWord={handleAddWord}
+        description={description}
+        setDescription={setDescription}
       />
       {/* Modal to Edit Word */}
       <ModalEditWord
@@ -270,6 +290,8 @@ function App() {
         editMeaning={editMeaning}
         setEditMeaning={setEditMeaning}
         handleUpdateWord={handleUpdateWord}
+        editDescription={editDescription}
+        setEditDescription={setEditDescription}
       />
     </div>
   );

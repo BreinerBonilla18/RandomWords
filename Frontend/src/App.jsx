@@ -2,9 +2,16 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ModalEditWord from "./modals/ModalEditWord";
 import ModalAddWord from "./modals/ModalAddWord";
 import { saveAs } from "file-saver";
-import axiosInstance from "./api/axiosIntance";
 import "./App.css";
 import WordItem from "./components/WordItem";
+import {
+  createWord,
+  getAnswersMeaning,
+  getRandomWord,
+  getWords,
+  updateTimesLearned,
+  updateWord,
+} from "./api/services";
 
 function App() {
   const [word, setWord] = useState("");
@@ -28,33 +35,26 @@ function App() {
   const [selectedAnswer, setSelectedAnswer] = useState({});
   const itemsPerPage = 10;
 
-  const handleAddWord = () => {
+  const handleAddWord = async () => {
     if (!word || !meaning || !description) {
       alert("Please, type a word and its meaning");
       return;
     }
-
-    axiosInstance
-      .post("create-word", {
-        word: word,
-        meaning: meaning,
-        description: description,
-      })
-      .then(() => {
-        setIsThereChangeWord(true);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-    setDescription("");
-    setWord("");
-    setMeaning("");
+    try {
+      await createWord(word, meaning, description);
+      setIsThereChangeWord(true);
+      setDescription("");
+      setWord("");
+      setMeaning("");
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const handleMarkLearned = async (wordId) => {
     try {
+      await updateTimesLearned(wordId);
       setIsChecked((prev) => [...prev, wordId]);
-      await axiosInstance.put(`update-times-learned/${wordId}`);
       setIsThereChangeWord(true);
     } catch (error) {
       console.error(error);
@@ -80,11 +80,7 @@ function App() {
     }
 
     try {
-      await axiosInstance.put(`update-word/${editId}`, {
-        word: editWord,
-        meaning: editMeaning,
-        description: editDescription,
-      });
+      await updateWord(editWord, editMeaning, editDescription, editId);
       setIsThereChangeWord(true); // Refresca la lista de palabras
       document.getElementById("edit_modal").close(); // Cierra el modal
     } catch (error) {
@@ -115,11 +111,11 @@ function App() {
   const fetchRandomWord = async () => {
     try {
       setSelectedAnswer({});
-      const responseRandomWord = await axiosInstance.get("random-word");
+      const responseRandomWord = await getRandomWord();
       setRandomWord(responseRandomWord.data);
       if (responseRandomWord.data) {
-        const responseAnswersMeanings = await axiosInstance.get(
-          `answers-meanings/${responseRandomWord.data.id}`
+        const responseAnswersMeanings = await getAnswersMeaning(
+          responseRandomWord.data.id
         );
         setGetAnswers(responseAnswersMeanings.data);
       }
@@ -135,7 +131,7 @@ function App() {
   useEffect(() => {
     const fetchWords = async () => {
       try {
-        const response = await axiosInstance.get("words");
+        const response = await getWords();
         setWordList(response.data);
         setIsThereChangeWord(false);
       } catch (error) {
@@ -161,7 +157,7 @@ function App() {
   // Filtrar palabras según el texto ingresado y la letra seleccionada
   const filteredWords = useMemo(() => {
     return sortedWordList
-      .filter((word) =>
+      ?.filter((word) =>
         filterText.length >= 3
           ? word?.word?.toLowerCase().includes(filterText.toLowerCase())
           : true
@@ -176,7 +172,7 @@ function App() {
   const currentItems = useMemo(() => {
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    return filteredWords.slice(indexOfFirstItem, indexOfLastItem);
+    return filteredWords?.slice(indexOfFirstItem, indexOfLastItem);
   }, [filteredWords, currentPage, itemsPerPage]);
 
   useEffect(() => {
@@ -188,7 +184,7 @@ function App() {
       <section className="flex items-center justify-center min-h-screen">
         <div className="bg-[#f0f0f0] p-8 relative">
           <span className="text-black text-xs absolute top-2.5 left-2.5">
-            Palabras: {wordList.length}
+            Palabras: {wordList?.length}
           </span>
           <h1 className="text-center mb-5 text-[#252525] text-5xl mt-1 font-semibold">
             Practice English Words
@@ -224,7 +220,7 @@ function App() {
           </label>
           <div className="rounded-sm h-96 overflow-y-scroll text-black mx-auto max-w-[500px] border border-gray-300">
             <ul>
-              {currentItems.map((word) => (
+              {currentItems?.map((word) => (
                 <WordItem
                   key={word.id}
                   word={word}
@@ -239,7 +235,7 @@ function App() {
           <div className="bg-gray-400 pt-3 px-3 mt-4 rounded-xl">
             <div className="flex overflow-x-scroll max-w-[450px]">
               {Array.from(
-                { length: Math.ceil(filteredWords.length / itemsPerPage) },
+                { length: Math.ceil(filteredWords?.length / itemsPerPage) },
                 (_, i) => (
                   <button
                     key={i}
@@ -364,26 +360,26 @@ function App() {
               Next Word
             </button>
           </div>
-            <div className="mt-6 font-semibold overflow-auto h-60 border rounded-lg p-4">
-          {Object.keys(selectedAnswer).length > 0 && (
-            <>
-              <h1 className="text-center text-lg mb-3">Descripción</h1>
-              <p className="text-justify bold">
-                {selectedAnswer.description
-                  ?.split("\n")
-                  .map((paragraph, index) => (
-                    <React.Fragment key={index}>
-                      {paragraph}
-                      {index <
-                        oneDataWord.description.split("\n").length - 1 && (
-                        <br />
-                      )}
-                    </React.Fragment>
-                  ))}
-              </p>
+          <div className="mt-6 font-semibold overflow-auto h-60 border rounded-lg p-4">
+            {Object.keys(selectedAnswer).length > 0 && (
+              <>
+                <h1 className="text-center text-lg mb-3">Descripción</h1>
+                <p className="text-justify bold">
+                  {selectedAnswer.description
+                    ?.split("\n")
+                    .map((paragraph, index) => (
+                      <React.Fragment key={index}>
+                        {paragraph}
+                        {index <
+                          oneDataWord?.description?.split("\n").length - 1 && (
+                          <br />
+                        )}
+                      </React.Fragment>
+                    ))}
+                </p>
               </>
-          )}
-            </div>
+            )}
+          </div>
         </div>
       </section>
     </div>

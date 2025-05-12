@@ -1,11 +1,12 @@
 import PropTypes from "prop-types"
 
-function WordItem({ word, onEdit, onDetails, onLearned, isChecked }) {
+function WordItem({ word, onEdit, onDetails, onLearned, isChecked, onHideWord }) {
   return (
     <li className="p-3 border-b border-gray-300">
       <p className="font-semibold">{word.word}:</p>
       <p className="mb-2">{word.meaning}</p>
       <div className="flex justify-end gap-2">
+          <button className="btn btn-xs bg-black" onClick={() => onHideWord(word.id, true)}>Hide</button>
         <button className="btn btn-xs" onClick={() => onEdit(word)}>
           Edit
         </button>
@@ -28,6 +29,7 @@ function WordItem({ word, onEdit, onDetails, onLearned, isChecked }) {
 
 WordItem.propTypes = {
     word: PropTypes.object,
+    onHideWord: PropTypes.func,
     onEdit: PropTypes.func,
     onDetails: PropTypes.func,
     onLearned: PropTypes.func,

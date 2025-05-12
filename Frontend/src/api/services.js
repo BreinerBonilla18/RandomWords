@@ -1,5 +1,6 @@
 import axiosInstance from "./axiosIntance";
 
+
 export const getWords = () => axiosInstance.get("words");
 
 export const getRandomWord = () => axiosInstance.get("random-word");
@@ -23,3 +24,6 @@ export const updateWord = (editWord, editMeaning, editDescription, editId) =>
 
 export const updateTimesLearned = (wordId) =>
   axiosInstance.put(`update-times-learned/${wordId}`);
+
+export const updateHideWord = (id, isHidden) =>
+  axiosInstance.put(`update-hide-word/${id}/${isHidden}`);

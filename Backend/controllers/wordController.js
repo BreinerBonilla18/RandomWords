@@ -1,10 +1,12 @@
 import pool from "../db/db.js";
 
 // Obtener todas las palabras
-export const getWords = async (req, res) => {
+export const getWords = async (_, res) => {
   try {
     const client = await pool.connect();
-    const { rows } = await client.query("SELECT * FROM words");
+    const { rows } = await client.query(
+      "SELECT * FROM words WHERE is_hidden = false"
+    );
     client.release();
     res.json(rows);
   } catch (err) {
@@ -71,12 +73,30 @@ export const updateTimesLearned = async (req, res) => {
   }
 };
 
+export const updateHideWord = async (req, res) => {
+  const { id } = req.params
+  const isHidden = req.params.isHidden == "true";
+  try {
+    const client = await pool.connect();
+    await client.query(
+      "UPDATE words SET is_hidden = $1 WHERE id = $2",
+      [isHidden, id]
+    );
+    client.release()
+    const hideMessage = isHidden ? "ocultada" : "expuesta" 
+    res.json({ message: `Palabra ${hideMessage} con exito`})
+  } catch (error) {
+    console.error(err);
+    res.status(500).json({ error: "Error al actualizar la palabra" });
+  }
+};
+
 // Obtener una palabra aleatoria
-export const getRandomWord = async (req, res) => {
+export const getRandomWord = async (_, res) => {
   try {
     const client = await pool.connect();
     const result = await client.query(
-      "SELECT * FROM words ORDER BY RANDOM() LIMIT 1"
+      "SELECT * FROM words WHERE is_hidden = false ORDER BY RANDOM() LIMIT 1 "
     );
     client.release();
 
@@ -108,7 +128,7 @@ export const getAnswersMeaning = async (req, res) => {
 
     if (selectedResult.rows.length === 0) {
       client.release();
-      return res.status(404).json({ error: 'Palabra no encontrada' });
+      return res.status(404).json({ error: "Palabra no encontrada" });
     }
 
     const selectedWord = selectedResult.rows[0];
@@ -133,6 +153,6 @@ export const getAnswersMeaning = async (req, res) => {
     res.json(shuffledWords);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Error al obtener las palabras' });
+    res.status(500).json({ error: "Error al obtener las palabras" });
   }
 };

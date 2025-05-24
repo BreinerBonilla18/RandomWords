@@ -21,12 +21,14 @@ function App() {
   const [isThereChangeWord, setIsThereChangeWord] = useState(false);
   const [meaning, setMeaning] = useState("");
   const [description, setDescription] = useState("");
+  const [level, setLevel] = useState("");
   const [filterText, setFilterText] = useState("");
   const [isChecked, setIsChecked] = useState([]);
-  const [selectedLetter, setSelectedLetter] = useState("none");
+  const [selectedLetter, setSelectedLetter] = useState("All");
   const [editWord, setEditWord] = useState("");
   const [editMeaning, setEditMeaning] = useState("");
   const [editDescription, setEditDescription] = useState("");
+   const [editLevel, setEditLevel] = useState("");
   const [editId, setEditId] = useState("");
   const [isAlphabetical, setIsAlphabetical] = useState(false);
   const [oneDataWord, setOneDataWord] = useState({});
@@ -35,17 +37,19 @@ function App() {
   const [randomWord, setRandomWord] = useState({});
   const [getAnswers, setGetAnswers] = useState([]);
   const [selectedAnswer, setSelectedAnswer] = useState({});
+  const [countCorrectAnswers, setCountCorrectAnswers] = useState(0);
   const itemsPerPage = 10;
 
   const handleAddWord = async () => {
-    if (!word || !meaning || !description) {
-      alert("Please, type a word and its meaning");
+    if (!word || !meaning || !description || !level) {
+      alert("A field is missing");
       return;
     }
     try {
-      await createWord(word, meaning, description);
+      await createWord(word, meaning, description, level);
       setIsThereChangeWord(true);
       setDescription("");
+      setLevel("")
       setWord("");
       setMeaning("");
     } catch (error) {
@@ -63,7 +67,7 @@ function App() {
     }
   };
 
-    const handleHideWord = async (wordId, isHidden) => {
+  const handleHideWord = async (wordId, isHidden) => {
     try {
       await updateHideWord(wordId, isHidden);
       setIsThereChangeWord(true);
@@ -85,14 +89,16 @@ function App() {
   }, []);
 
   const handleUpdateWord = async () => {
-    if (!editWord || !editMeaning || !editDescription) {
-      alert("Please, fill in both fields.");
+    if (!editWord || !editMeaning || !editDescription || !editLevel) {
+      alert("A field is missing");
       return;
     }
 
     try {
-      await updateWord(editWord, editMeaning, editDescription, editId);
+      await updateWord(editWord, editMeaning, editDescription, editLevel, editId);
       setIsThereChangeWord(true); // Refresca la lista de palabras
+      setEditDescription("");
+      setEditLevel("")
       document.getElementById("edit_modal").close(); // Cierra el modal
     } catch (error) {
       console.error(error);
@@ -106,6 +112,7 @@ function App() {
   };
 
   const openEditModal = (word) => {
+    setEditLevel(word.cefr_level)
     setEditDescription(word.description);
     setEditWord(word.word); // Establece el valor de la palabra en el input
     setEditMeaning(word.meaning); // Establece el significado en el input
@@ -138,7 +145,6 @@ function App() {
   useEffect(() => {
     fetchRandomWord();
   }, []);
-
   useEffect(() => {
     const fetchWords = async () => {
       try {
@@ -174,9 +180,9 @@ function App() {
           : true
       )
       .filter((word) =>
-        selectedLetter === "none"
+        selectedLetter === "All"
           ? true
-          : word?.word && word.word[0]?.toUpperCase() === selectedLetter
+          : word?.cefr_level && word.cefr_level.toUpperCase() === selectedLetter
       );
   }, [sortedWordList, filterText, selectedLetter]);
 
@@ -212,11 +218,10 @@ function App() {
               onChange={(e) => setSelectedLetter(e.target.value)}
               className="select rounded-md w-full"
             >
-              <option disabled={true}>Filter by letter</option>
-              <option value="none">none</option>
-              {Array.from({ length: 26 }, (_, i) => (
-                <option key={i} value={String.fromCharCode(65 + i)}>
-                  {String.fromCharCode(65 + i)}
+              <option disabled={true}>Filter by level</option>
+              {["All", "A1", "A2", "B1", "B2", "C1", "C2"].map((lvl, i) => (
+                <option key={i} value={lvl}>
+                  {lvl}
                 </option>
               ))}
             </select>
@@ -282,9 +287,11 @@ function App() {
               Add Word
             </button>
           </div>
-          <ModalDetail oneDataWord={oneDataWord}/>
+          <ModalDetail oneDataWord={oneDataWord} />
           {/* Modal to Add Word */}
           <ModalAddWord
+            level={level}
+            setLevel={setLevel}
             word={word}
             setWord={setWord}
             meaning={meaning}
@@ -302,10 +309,15 @@ function App() {
             handleUpdateWord={handleUpdateWord}
             editDescription={editDescription}
             setEditDescription={setEditDescription}
+            editLevel={editLevel} 
+            setEditLevel={setEditLevel}
           />
         </div>
       </section>
-      <section className="bg-[#1b1b1d] flex items-center justify-center min-h-screen">
+      <section className="bg-[#1b1b1d] flex items-center justify-center min-h-screen relative">
+        <div className="absolute top-0 left-0 m-5 font-semibold">
+          Correct Answers: {countCorrectAnswers}
+        </div>
         <div className="w-full max-w-3xl px-4">
           <div className="mb-6">
             <h2 className="text-white text-xl md:text-2xl font-semibold text-center">
@@ -317,7 +329,12 @@ function App() {
               return (
                 <button
                   key={answer.id}
-                  onClick={() => setSelectedAnswer(answer)}
+                  onClick={() => {
+                    setSelectedAnswer(answer),
+                      setCountCorrectAnswers((c) =>
+                        answer.id == randomWord.id ? c + 1 : c
+                      );
+                  }}
                   type="button"
                   className={`${
                     Object.keys(selectedAnswer).length > 0

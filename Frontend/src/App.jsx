@@ -199,7 +199,7 @@ function App() {
   return (
     <div>
       <section className="flex items-center justify-center min-h-screen">
-        <div className="bg-[#f0f0f0] p-8 relative">
+        <div className="bg-[#f0f0f0] p-8 relative max-w-[1000px] w-full">
           <span className="text-black text-xs absolute top-2.5 left-2.5">
             Palabras: {wordList?.length}
           </span>
@@ -234,8 +234,8 @@ function App() {
             />
             <small>Habilitar orden alfabético</small>
           </label>
-          <div className="rounded-sm h-96 overflow-y-scroll text-black mx-auto max-w-[500px] border border-gray-300">
-            <ul>
+          <div className="rounded-sm h-96 overflow-y-scroll text-black mx-auto w-full border border-gray-300">
+            <ul className="grid grid-cols-1 md:grid-cols-2">
               {currentItems?.map((word) => (
                 <WordItem
                   key={word.id}
@@ -247,10 +247,11 @@ function App() {
                   isChecked={isChecked.includes(word.id)}
                 />
               ))}
+           
             </ul>
           </div>
           <div className="bg-gray-400 pt-3 px-3 mt-4 rounded-xl">
-            <div className="flex overflow-x-scroll max-w-[450px]">
+            <div className="flex overflow-x-scroll w-full">
               {Array.from(
                 { length: Math.ceil(filteredWords?.length / itemsPerPage) },
                 (_, i) => (

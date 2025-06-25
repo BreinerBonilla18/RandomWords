@@ -4,7 +4,7 @@ import React from "react";
 function ModalDetail({ oneDataWord }) {
   return (
     <dialog id="detail_modal" className="modal">
-      <div className="modal-box pt-0">
+      <div className="modal-box pt-0 w-11/12 max-w-5xl">
         <div className="bg-blue-800 mt-5 p-2 flex justify-center items-center mb-2 sticky top-0">
           <h1 className="text-2xl font-bold">{oneDataWord?.cefr_level}</h1>
         </div>
